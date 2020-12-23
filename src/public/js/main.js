@@ -41,16 +41,22 @@ $(function () {
     $messageForm.submit(e => {
         e.preventDefault();  // 
         if (!($messageBox.val().trim() == '')) {
-            socket.emit('send message', $messageBox.val().trim()); // Se emite el mensaje
+            socket.emit('send message', $messageBox.val().trim(), data =>{
+                console.log('data call back', data)
+            } ); // Se emite el mensaje
         }
         $messageBox.val(null);
     });
     // Se escucha el evento new message
     socket.on('new message', (message) => {
-        $chat.append(message + `<br/>`);
+        $chat.append(`<h5><i class="fas fa-user"></i> ${message.UserName} says: <b class="text-info">${message.msg}</b></h5>`);
     });
     // Se escucha el evento usernames
     socket.on('usernames', (userNames) => {
-        $userNames.append(userNames + `<br/>`);
+        let html= '';
+        userNames.map((currentValue) => {
+            html += (`<p><h5><i class="fas fa-user"></i> ${currentValue} </h5></p>`);
+        });
+        $userNames.html(html);
     });
 });
