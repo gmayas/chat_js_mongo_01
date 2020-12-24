@@ -81,6 +81,7 @@ $(function () {
 
     displayMsg = (data) => {
         $chat.append(`<h5><i class="fas fa-user"></i> ${data.nick} says: <b class="text-info">${data.msg}</b></h5>`);
+        //window.scrollTo(0, document.body.scrollHeight);
     }
 
     displayMsgNewUser = (data) => {

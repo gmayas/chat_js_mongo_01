@@ -16,6 +16,16 @@ body {
   display: none;
 }
 
+#chat{
+   overflow-y: scroll;
+   height: 20em;
+}
+
+#userNames{
+  overflow-y: scroll;
+  height: 10em;
+}
+
 .error {
   color: red;
 }
