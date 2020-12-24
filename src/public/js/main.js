@@ -24,14 +24,14 @@ $(function () {
     $nickForm.submit(e => {
         e.preventDefault();  // Evita el evento de resfrecar la pagina
         if (!($nickName.val().trim() == '')) {
-            console.log('$nickName.val(): ', $nickName.val().trim());
-            socket.emit('new user', $nickName.val().trim(), dataResponse => {
+            socket.emit('new user', $nickName.val(), dataResponse => {
                 console.log('dataResponse: ', dataResponse);
-                if (dataResponse.Ok) {
+                if (dataResponse) {
                     $('#nickWrap').hide();
                     $('#contentWrap').show();
+                    $('#message').focus();
                 } else {
-                    $nickError.html(`<div class="alert alert-danger text-center"><h5>${dataResponse.resError}</h5></div>`);
+                    $nickError.html(`<div class="alert alert-danger text-center"><h5>That username already Exists.</h5></div>`);
                 };
             });
         }
@@ -41,15 +41,16 @@ $(function () {
     $messageForm.submit(e => {
         e.preventDefault();  // 
         if (!($messageBox.val().trim() == '')) {
-            socket.emit('send message', $messageBox.val().trim(), data =>{
-                console.log('data call back', data)
-            } ); // Se emite el mensaje
+            socket.emit('send message', $messageBox.val(), data =>{
+                $chat.append(`<p class="error">${data}</p>`)
+            }); // Se emite el mensaje
         }
         $messageBox.val(null);
     });
     // Se escucha el evento new message
     socket.on('new message', (message) => {
-        $chat.append(`<h5><i class="fas fa-user"></i> ${message.UserName} says: <b class="text-info">${message.msg}</b></h5>`);
+        displayMsg(data);
+        
     });
     // Se escucha el evento usernames
     socket.on('usernames', (userNames) => {
@@ -59,4 +60,18 @@ $(function () {
         });
         $userNames.html(html);
     });
+
+    socket.on('whisper', data => {
+        $chat.append(`<p class="whisper"><b>${data.nick}</b>: ${data.msg}</p>`);
+      });
+  
+      socket.on('load old msgs', msgs => {
+        for(let i = msgs.length -1; i >=0 ; i--) {
+          displayMsg(msgs[i]);
+        }
+      });
+
+    displayMsg = (data) => {
+        $chat.append(`<h5><i class="fas fa-user"></i> ${data.nick} says: <b class="text-info">${data.msg}</b></h5>`);
+      }
 });

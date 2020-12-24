@@ -1,83 +1,70 @@
+const Chat = require('../../models/Chat');
+
 module.exports = io => {
 
-    let nickNames = [];
+  let users = {};
 
-    io.on('connection', (socket) => {
-        console.log('New User Connected.');
-        // Evento new user
-        socket.on('new user', (user, res) => {
-            try {
-                if (nickNames.indexOf(user) <= -1) {
-                    nickNames.push(user);
-                }
-                socket.nickname = user;
-                //console.log('socket: ', socket);
-                res({
-                    Ok: true,
-                    UserName: socket.nickname,
-                    resError: 'No error.'
-                })
-                updateNickNames();
-            } catch (e) {
-                console.log('error new user: ', e)
-                res({
-                    Ok: false,
-                    UserName: '',
-                    resError: 'Oops, something went wrong.'
-                })
-            };
-        });
-        // Evento send message
-        socket.on('send message', (message, cb) => {
-            // @User message
-            if (message.substr(0, 1) === '@') {
-                message = message.substr(1);
-                const index = message.indexOf(' ');
-                if (index != -1) {
-                    var nameUser = message.substr(0, index);
-                    message = message.substr(index + 1);
-                    if (nickNames.some(elem => elem == nameUser)) {
-                        let wMessage = socket.nickname;
-                        wMessage.emit('whisper', cb({
-                            Ok: true,
-                            UserName: socket.nickname,
-                            msg: message,
-                            resError: 'No error.'
-                        }));
-                    } else {
-                        cb({
-                            Ok: false,
-                            UserName: socket.nickname,
-                            msg: 'Error! Please enter a Valid User',
-                            resError: 'Error.'
-                        })
-                        console.log('Si el user no esta conectado')
-                    };
-                } else {
-                    cb({
-                        Ok: false,
-                        UserName: socket.nickname,
-                        msg: 'Error! Please enter your message',
-                        resError: 'Error.'
-                    })
-                }
-            } else{
-                io.sockets.emit('new message', {
-                    msg: message,
-                    UserName: socket.nickname
-                }); // Se transmite a todas las conecciones
-            };
-        });
-        // Evento disconnect
-        socket.on('disconnect', () => {
-            if (!socket.nickname) return;
-            nickNames.splice(nickNames.indexOf(socket.nickname), 1);
-            updateNickNames(); //
-            console.log('User disconnect');
-        });
+  io.on('connection', async socket => {
 
-        updateNickNames = () => {
-            io.sockets.emit('usernames', nickNames); //
-        }
+    let messages = await Chat.find({}).limit(8).sort('-created');
+
+    socket.emit('load old msgs', messages);
+
+    socket.on('new user', (data, cb) => {
+      if (data in users) {
+        cb(false);
+      } else {
+        cb(true);
+        socket.nickname = data;
+        users[socket.nickname] = socket;
+        updateNicknames();
+      }
     });
-};
+
+    // receive a message a broadcasting
+    socket.on('send message', async (data, cb) => {
+      var msg = data.trim();
+
+      if (msg.substr(0, 3) === '/w ') {
+        msg = msg.substr(3);
+        var index = msg.indexOf(' ');
+        if(index !== -1) {
+          var name = msg.substring(0, index);
+          var msg = msg.substring(index + 1);
+          if (name in users) {
+            users[name].emit('whisper', {
+              msg,
+              nick: socket.nickname 
+            });
+          } else {
+            cb('Error! Enter a valid User');
+          }
+        } else {
+          cb('Error! Please enter your message');
+        }
+      } else {
+        var newMsg = new Chat({
+          msg,
+          nick: socket.nickname
+        });
+        await newMsg.save();
+      
+        io.sockets.emit('new message', {
+          msg,
+          nick: socket.nickname
+        });
+      }
+    });
+
+    socket.on('disconnect', data => {
+      if(!socket.nickname) return;
+      delete users[socket.nickname];
+      updateNicknames();
+    });
+
+    updateNicknames = () => {
+      io.sockets.emit('usernames', Object.keys(users));
+    }
+  });
+
+}
