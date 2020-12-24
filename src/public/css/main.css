@@ -16,7 +16,7 @@ body {
   display: none;
 }
 
-error {
+.error {
   color: red;
 }
 
@@ -24,3 +24,10 @@ error {
   color: gray;
   font-style: italic;
 }
+
+.new-user {
+  color:blue;
+  font-style: italic;
+}
+
+

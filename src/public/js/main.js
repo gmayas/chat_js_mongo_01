@@ -25,8 +25,8 @@ $(function () {
         e.preventDefault();  // Evita el evento de resfrecar la pagina
         if (!($nickName.val().trim() == '')) {
             socket.emit('new user', $nickName.val(), dataResponse => {
-                console.log('dataResponse: ', dataResponse);
-                if (dataResponse) {
+                console.log('dataResponse: ', dataResponse)
+                if (dataResponse.Ok) {
                     $('#nickWrap').hide();
                     $('#contentWrap').show();
                     $('#message').focus();
@@ -41,20 +41,20 @@ $(function () {
     $messageForm.submit(e => {
         e.preventDefault();  // 
         if (!($messageBox.val().trim() == '')) {
-            socket.emit('send message', $messageBox.val(), data =>{
-                $chat.append(`<p class="error">${data}</p>`)
+            socket.emit('send message', $messageBox.val(), data => {
+                $chat.append(`<h5 class="error"><i class="fas fa-exclamation-triangle"></i> ${data}</h5>`)
             }); // Se emite el mensaje
         }
         $messageBox.val(null);
     });
     // Se escucha el evento new message
     socket.on('new message', (message) => {
-        displayMsg(data);
-        
+        displayMsg(message);
+
     });
     // Se escucha el evento usernames
     socket.on('usernames', (userNames) => {
-        let html= '';
+        let html = '';
         userNames.map((currentValue) => {
             html += (`<p><h5><i class="fas fa-user"></i> ${currentValue} </h5></p>`);
         });
@@ -62,16 +62,36 @@ $(function () {
     });
 
     socket.on('whisper', data => {
-        $chat.append(`<p class="whisper"><b>${data.nick}</b>: ${data.msg}</p>`);
-      });
-  
-      socket.on('load old msgs', msgs => {
-        for(let i = msgs.length -1; i >=0 ; i--) {
-          displayMsg(msgs[i]);
-        }
-      });
+        $chat.append(`<h5><i class="fas fa-user"></i> ${data.nick} says in private: <b class="whisper">${data.msg}</b></h5>`);
+    });
+
+    socket.on('load old msgs', msgs => {
+        msgs.map((currentValue) => {
+            displayMsg(currentValue);
+        });
+    });
+
+    socket.on('msg new user', data => {
+        displayMsgNewUser(data);
+    });
+
+    socket.on('msg user logout', data => {
+        displayMsgUserLogout(data);
+    });
 
     displayMsg = (data) => {
         $chat.append(`<h5><i class="fas fa-user"></i> ${data.nick} says: <b class="text-info">${data.msg}</b></h5>`);
-      }
+    }
+
+    displayMsgNewUser = (data) => {
+        $chat.append(`<h5 class="new-user"><i class="fas fa-user-plus"></i> ${data} joined the Chat...</h5>`);
+    };
+
+    displayMsgNewUser = (data) => {
+        $chat.append(`<h5 class="new-user"><i class="fas fa-user-plus"></i> ${data} joined the Chat...</h5>`);
+    };
+
+    displayMsgUserLogout = (data) => {
+        $chat.append(`<h5 class="text-danger"><i class="fas fa-user-minus"></i> ${data} left the Chat...</h5>`);
+    };
 });

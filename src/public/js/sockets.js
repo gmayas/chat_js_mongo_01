@@ -5,6 +5,7 @@ module.exports = io => {
   let users = {};
 
   io.on('connection', async socket => {
+    console.log('There is a new connection...')
 
     let messages = await Chat.find({}).limit(8).sort('-created');
 
@@ -12,11 +13,17 @@ module.exports = io => {
 
     socket.on('new user', (data, cb) => {
       if (data in users) {
-        cb(false);
+        cb({
+          Ok: false,
+          nickname: ''});
       } else {
-        cb(true);
         socket.nickname = data;
         users[socket.nickname] = socket;
+        console.log('Enter the Chat: ', socket.nickname);
+        io.sockets.emit('msg new user', socket.nickname);
+        cb({
+          Ok: true,
+          nickname: socket.nickname});
         updateNicknames();
       }
     });
@@ -24,17 +31,17 @@ module.exports = io => {
     // receive a message a broadcasting
     socket.on('send message', async (data, cb) => {
       var msg = data.trim();
-
-      if (msg.substr(0, 3) === '/w ') {
-        msg = msg.substr(3);
+      if (msg.substr(0, 1) === '@') {
+        msg = msg.substr(1);
         var index = msg.indexOf(' ');
-        if(index !== -1) {
+        if (index !== -1) {
           var name = msg.substring(0, index);
           var msg = msg.substring(index + 1);
           if (name in users) {
+            console.log('Emits private message: ', socket.nickname);
             users[name].emit('whisper', {
               msg,
-              nick: socket.nickname 
+              nick: socket.nickname
             });
           } else {
             cb('Error! Enter a valid User');
@@ -48,7 +55,7 @@ module.exports = io => {
           nick: socket.nickname
         });
         await newMsg.save();
-      
+        console.log('Emits message: ', socket.nickname);
         io.sockets.emit('new message', {
           msg,
           nick: socket.nickname
@@ -56,8 +63,13 @@ module.exports = io => {
       }
     });
 
-    socket.on('disconnect', data => {
-      if(!socket.nickname) return;
+    socket.on('disconnect', () => {
+      if (!socket.nickname) {
+        console.log('Disconnect only ...');
+        return;
+      };
+      console.log('Disconnects: ', socket.nickname);
+      io.sockets.emit('msg user logout', socket.nickname);
       delete users[socket.nickname];
       updateNicknames();
     });
@@ -67,4 +79,4 @@ module.exports = io => {
     }
   });
 
-}
+};
