@@ -6,9 +6,7 @@ module.exports = io => {
 
   io.on('connection', async socket => {
     console.log('There is a new connection...')
-
-    let messages = await Chat.find({}).limit(8).sort('-created');
-
+    let messages = await Chat.find({}).sort('_id');
     socket.emit('load old msgs', messages);
 
     socket.on('new user', (data, cb) => {
