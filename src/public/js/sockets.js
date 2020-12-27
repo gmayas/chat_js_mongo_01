@@ -13,7 +13,8 @@ module.exports = io => {
       if (data in users) {
         cb({
           Ok: false,
-          nickname: ''});
+          nickname: ''
+        });
       } else {
         socket.nickname = data;
         users[socket.nickname] = socket;
@@ -21,7 +22,8 @@ module.exports = io => {
         io.sockets.emit('msg new user', socket.nickname);
         cb({
           Ok: true,
-          nickname: socket.nickname});
+          nickname: socket.nickname
+        });
         updateNicknames();
       }
     });

@@ -25,10 +25,10 @@ $(function () {
         e.preventDefault();  // Evita el evento de resfrecar la pagina
         if (!($nickName.val().trim() == '')) {
             socket.emit('new user', $nickName.val(), dataResponse => {
-                console.log('dataResponse: ', dataResponse)
                 if (dataResponse.Ok) {
                     $('#nickWrap').hide();
                     $('#contentWrap').show();
+                    scrollToBottom();
                     $('#message').focus();
                 } else {
                     $nickError.html(`<div class="alert alert-danger text-center"><h5>That username already Exists.</h5></div>`);
@@ -43,6 +43,7 @@ $(function () {
         if (!($messageBox.val().trim() == '')) {
             socket.emit('send message', $messageBox.val(), data => {
                 $chat.append(`<h5 class="error"><i class="fas fa-exclamation-triangle"></i> ${data}</h5>`)
+                scrollToBottom();
             }); // Se emite el mensaje
         }
         $messageBox.val(null);
@@ -56,13 +57,14 @@ $(function () {
     socket.on('usernames', (userNames) => {
         let html = '';
         userNames.map((currentValue) => {
-            html += (`<p><h5><i class="fas fa-user"></i> ${currentValue} </h5></p>`);
+            html += (`<h5><i class="fas fa-user"></i> ${currentValue} </h5>`);
         });
         $userNames.html(html);
     });
 
     socket.on('whisper', data => {
         $chat.append(`<h5><i class="fas fa-user"></i> ${data.nick} says in private: <b class="whisper">${data.msg}</b></h5>`);
+        scrollToBottom();
     });
 
     socket.on('load old msgs', msgs => {
@@ -81,18 +83,21 @@ $(function () {
 
     displayMsg = (data) => {
         $chat.append(`<h5><i class="fas fa-user"></i> ${data.nick} says: <b class="text-info">${data.msg}</b></h5>`);
-        //window.scrollTo(0, document.body.scrollHeight);
+        scrollToBottom();
     }
 
     displayMsgNewUser = (data) => {
         $chat.append(`<h5 class="new-user"><i class="fas fa-user-plus"></i> ${data} joined the Chat...</h5>`);
-    };
-
-    displayMsgNewUser = (data) => {
-        $chat.append(`<h5 class="new-user"><i class="fas fa-user-plus"></i> ${data} joined the Chat...</h5>`);
+        scrollToBottom();
     };
 
     displayMsgUserLogout = (data) => {
         $chat.append(`<h5 class="text-danger"><i class="fas fa-user-minus"></i> ${data} left the Chat...</h5>`);
+        scrollToBottom();
+    };
+
+    scrollToBottom = () => {
+        $($chat).scrollTop(Math.pow($($chat).height(), 2));
     };
 });
+
