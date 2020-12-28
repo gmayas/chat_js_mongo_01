@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
 const path = require('path');
+const dotenv = require('dotenv'); 
+dotenv.config();
 
 // Initializations
 const app = express();
